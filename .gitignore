@@ -1,0 +1,18 @@
+# Ambiente Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Configuração local
+.env
+
+# Banco de dados gerado pelo seed
+*.db
+*.db-journal
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
