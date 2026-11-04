@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_icones.html" as icone %}
+{% block titulo %}Buscar paciente · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="conteudo pagina-busca">
+  <div>
+    <h1>Buscar paciente</h1>
+    <p class="subtitulo">Pesquise por CPF, Cartão Nacional de Saúde (CNS) ou nome completo.</p>
+  </div>
+
+  <form class="form-busca" method="get" action="{{ url_for('resultados') }}" role="search">
+    <fieldset class="chips" style="border:0;padding:0;margin:0">
+      <legend class="visualmente-oculto">Buscar por</legend>
+      {% for valor, rotulo in [("todos", "Todos"), ("cpf", "CPF"), ("cns", "CNS"), ("nome", "Nome")] %}
+        <input type="radio" id="tipo-{{ valor }}" name="tipo" value="{{ valor }}" {% if tipo == valor %}checked{% endif %}>
+        <label class="chip" for="tipo-{{ valor }}">{{ rotulo }}</label>
+      {% endfor %}
+    </fieldset>
+
+    {% if erro %}<p class="mensagem mensagem-erro" role="alert">{{ erro }}</p>{% endif %}
+
+    <div class="barra-busca">
+      <div class="campo-busca">
+        {{ icone.busca() }}
+        <label for="q" class="visualmente-oculto">CPF, CNS ou nome do paciente</label>
+        <input id="q" name="q" value="{{ termo }}" placeholder="Digite CPF, CNS ou nome do paciente…" autocomplete="off" required autofocus>
+      </div>
+      <button class="btn btn-primario" type="submit">Buscar</button>
+    </div>
+
+    <details class="filtros-avancados" {% if nascimento or mae or municipio %}open{% endif %}>
+      <summary>+ Filtros avançados (data de nascimento, nome da mãe, município)</summary>
+      <div class="grade-filtros">
+        <div class="campo">
+          <label for="nascimento">Data de nascimento</label>
+          <input id="nascimento" name="nascimento" type="date" value="{{ nascimento }}">
+        </div>
+        <div class="campo">
+          <label for="mae">Nome da mãe</label>
+          <input id="mae" name="mae" value="{{ mae }}" placeholder="Ex.: Ana Pereira">
+        </div>
+        <div class="campo">
+          <label for="municipio">Município</label>
+          <select id="municipio" name="municipio">
+            <option value="">Todos</option>
+            {% for m in municipios %}<option {% if m == municipio %}selected{% endif %}>{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+    </details>
+
+    {% if recentes %}
+    <section class="cartao lista-recentes" aria-labelledby="titulo-recentes">
+      <h2 id="titulo-recentes">Buscas recentes</h2>
+      {% for r in recentes %}
+      <a class="item-recente" href="{{ url_for('historico', paciente_id=r['id']) }}">
+        <span>
+          <strong>{{ r['nome'] }}</strong>
+          <span class="pequeno suave">CPF {{ r['cpf'] | mascarar_cpf }} · Nasc. {{ r['data_nascimento'] | data_br }}</span>
+        </span>
+        <span class="pequeno suave">{{ r['ultimo_acesso'] | tempo_relativo }}</span>
+      </a>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </form>
+</main>
+{% endblock %}

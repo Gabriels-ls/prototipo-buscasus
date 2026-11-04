@@ -1,6 +1,7 @@
 """Busca SUS: consulta ao histórico de atendimentos da rede pública."""
 import os
 import secrets
+from collections import Counter
 from datetime import timedelta
 from functools import wraps
 
@@ -106,3 +107,112 @@ def login():
 def sair():
     session.clear()
     return redirect(url_for("login"))
+
+
+# ---------------------------------------------------------------------------
+# Busca de pacientes
+# ---------------------------------------------------------------------------
+
+TIPOS_BUSCA = ("todos", "cpf", "cns", "nome")
+
+
+def _like(palavra):
+    """Monta o padrão do LIKE escapando os caracteres especiais."""
+    palavra = palavra.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{palavra}%"
+
+
+def buscar_pacientes(termo, tipo, nascimento="", mae="", municipio=""):
+    """Retorna (pacientes, mensagem_de_erro)."""
+    digitos = utils.so_digitos(termo)
+    so_numeros = termo.replace(".", "").replace("-", "").replace(" ", "").isdigit()
+
+    if tipo == "todos":
+        if so_numeros and len(digitos) == 11:
+            tipo = "cpf"
+        elif so_numeros and len(digitos) == 15:
+            tipo = "cns"
+        elif so_numeros:
+            return None, "O CPF tem 11 dígitos e o Cartão SUS (CNS) tem 15. Confira o número digitado."
+        else:
+            tipo = "nome"
+
+    condicoes, params = [], []
+    if tipo == "cpf":
+        if len(digitos) != 11:
+            return None, "O CPF precisa ter 11 dígitos."
+        condicoes.append("p.cpf = ?")
+        params.append(digitos)
+    elif tipo == "cns":
+        if len(digitos) != 15:
+            return None, "O Cartão SUS (CNS) precisa ter 15 dígitos."
+        condicoes.append("p.cns = ?")
+        params.append(digitos)
+    else:
+        palavras = [p for p in utils.normalizar(termo).split() if len(p) > 1]
+        if not palavras:
+            return None, "Digite o nome do paciente para buscar."
+        for palavra in palavras:
+            condicoes.append("p.nome_busca LIKE ? ESCAPE '\\'")
+            params.append(_like(palavra))
+
+    if nascimento:
+        condicoes.append("p.data_nascimento = ?")
+        params.append(nascimento)
+    for palavra in utils.normalizar(mae).split():
+        condicoes.append("p.mae_busca LIKE ? ESCAPE '\\'")
+        params.append(_like(palavra))
+    if municipio:
+        condicoes.append("p.municipio = ?")
+        params.append(municipio)
+
+    sql = (
+        "SELECT p.*, (SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.paciente_id = p.id) AS ultimo_atendimento "
+        f"FROM pacientes p WHERE {' AND '.join(condicoes)} "
+        "ORDER BY ultimo_atendimento IS NULL, ultimo_atendimento DESC, p.nome LIMIT 50"
+    )
+    return db.get_db().execute(sql, params).fetchall(), None
+
+
+def contexto_busca(**extra):
+    municipios = [r["municipio"] for r in db.get_db().execute(
+        "SELECT DISTINCT municipio FROM pacientes ORDER BY municipio")]
+    contexto = {"municipios": municipios, "recentes": buscas_recentes(),
+                "termo": "", "tipo": request.args.get("tipo", "todos"),
+                "nascimento": "", "mae": "", "municipio": "", "erro": None}
+    contexto.update(extra)
+    return contexto
+
+
+def buscas_recentes():
+    return []
+
+
+@app.route("/busca")
+@login_obrigatorio
+def busca():
+    return render_template("busca.html", **contexto_busca())
+
+
+@app.route("/resultados")
+@login_obrigatorio
+def resultados():
+    termo = request.args.get("q", "").strip()
+    tipo = request.args.get("tipo", "todos")
+    if tipo not in TIPOS_BUSCA:
+        tipo = "todos"
+    filtros = {
+        "nascimento": request.args.get("nascimento", "").strip(),
+        "mae": request.args.get("mae", "").strip(),
+        "municipio": request.args.get("municipio", "").strip(),
+    }
+    if not termo:
+        return redirect(url_for("busca"))
+
+    pacientes, erro = buscar_pacientes(termo, tipo, **filtros)
+    if erro:
+        return render_template("busca.html", **contexto_busca(erro=erro, termo=termo, tipo=tipo, **filtros))
+
+    repeticoes = Counter(p["nome_busca"] for p in pacientes)
+    homonimos = any(n > 1 for n in repeticoes.values())
+    return render_template("resultados.html", pacientes=pacientes, termo=termo, homonimos=homonimos)

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_icones.html" as icone %}
+{% block titulo %}Resultados · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="conteudo">
+  <a class="voltar" href="{{ url_for('busca') }}">← Voltar para a busca</a>
+
+  {% if pacientes %}
+    <h1 class="titulo-pagina">
+      {{ pacientes | length }} {{ "paciente encontrado" if pacientes | length == 1 else "pacientes encontrados" }} para “{{ termo }}”
+    </h1>
+
+    {% if homonimos %}
+    <p class="mensagem mensagem-aviso">{{ icone.aviso() }}
+      <span>Há pacientes com o mesmo nome. Confirme pela data de nascimento, nome da mãe ou CPF antes de abrir o histórico.</span>
+    </p>
+    {% endif %}
+    {% if pacientes | length > 1 %}<p class="pequeno suave">Ordenado por atendimento mais recente</p>{% endif %}
+
+    {% for p in pacientes %}
+    <article class="cartao card-paciente">
+      <div class="avatar" aria-hidden="true">{{ p['nome'] | iniciais }}</div>
+      <div class="dados">
+        <strong>{{ p['nome'] }}</strong>
+        CPF {{ p['cpf'] | mascarar_cpf }} · Nasc. {{ p['data_nascimento'] | data_br }} ({{ p['data_nascimento'] | idade }} anos) ·
+        {% if p['ultimo_atendimento'] %}Último atend. {{ p['ultimo_atendimento'] | data_br }}{% else %}Sem atendimentos registrados{% endif %}<br>
+        Mãe: {{ p['nome_mae'] or "Não informado" }} · {{ p['municipio'] }}/SC
+      </div>
+      <a class="btn btn-primario" href="{{ url_for('historico', paciente_id=p['id']) }}">Ver histórico</a>
+    </article>
+    {% endfor %}
+
+    <p class="pequeno suave">
+      {% if pacientes | length == 1 %}Não é este paciente?{% else %}Não encontrou o paciente?{% endif %}
+      Refine a busca usando CPF ou CNS.
+    </p>
+  {% else %}
+    <h1 class="titulo-pagina">Nenhum paciente encontrado para “{{ termo }}”</h1>
+    <section class="cartao vazio">
+      <div class="vazio-icone">{{ icone.busca("#1C64AE", 28) }}</div>
+      <h2>Nenhum registro encontrado na rede</h2>
+      <p class="suave">Isso pode acontecer por alguns motivos:</p>
+      <ul class="motivos">
+        <li><strong>Nome diferente no cadastro</strong>O nome pode estar escrito de outra forma. Tente buscar pelo CPF ou Cartão SUS (CNS).</li>
+        <li><strong>Sem atendimentos na rede</strong>O paciente pode nunca ter sido atendido nas unidades e hospitais integrados.</li>
+        <li><strong>Atendido fora da região</strong>Atendimentos fora da região da AMFRI não fazem parte desta base.</li>
+      </ul>
+      <div class="acoes">
+        <a class="btn btn-primario" href="{{ url_for('busca') }}">Nova busca</a>
+        <a class="btn btn-secundario" href="{{ url_for('busca', tipo='cpf') }}">Buscar por CPF ou CNS</a>
+      </div>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}
