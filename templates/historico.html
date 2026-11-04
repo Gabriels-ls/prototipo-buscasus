@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% import "_icones.html" as icone %}
+{% block titulo %}{{ paciente['nome'] }} · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="conteudo conteudo-largo">
+  <div class="layout-historico">
+    <aside class="cartao ficha" aria-label="Dados do paciente">
+      <div>
+        <div class="avatar avatar-grande" aria-hidden="true">{{ paciente['nome'] | iniciais }}</div>
+        <h1>{{ paciente['nome'] }}</h1>
+        {% if paciente['nome_social'] %}<p class="pequeno suave">Nome social: {{ paciente['nome_social'] }}</p>{% endif %}
+        <p class="suave pequeno">{{ paciente['data_nascimento'] | idade }} anos · {{ paciente['sexo'] }}</p>
+      </div>
+      <hr>
+      <dl class="detalhes">
+        <div><dt>CPF</dt><dd>{{ paciente['cpf'] | mascarar_cpf }}</dd></div>
+        <div><dt>Cartão SUS (CNS)</dt><dd>{{ paciente['cns'] | mascarar_cns }}</dd></div>
+        <div><dt>Data de nascimento</dt><dd>{{ paciente['data_nascimento'] | data_br }}</dd></div>
+        {% if paciente['raca_cor'] %}<div><dt>Raça/cor</dt><dd>{{ paciente['raca_cor'] }}</dd></div>{% endif %}
+        <div><dt>Nome da mãe</dt><dd>{{ paciente['nome_mae'] or "Não informado" }}</dd></div>
+        {% if paciente['nome_pai'] %}<div><dt>Nome do pai</dt><dd>{{ paciente['nome_pai'] }}</dd></div>{% endif %}
+        <div><dt>Município</dt><dd>{{ paciente['municipio'] }}/SC</dd></div>
+        <div><dt>Telefone</dt><dd>{{ paciente['telefone'] | mascarar_telefone }}</dd></div>
+        <div><dt>Unidade de referência</dt><dd>{{ paciente['unidade_referencia'] or "Não informada" }}</dd></div>
+      </dl>
+      <hr>
+      <section>
+        <h2>Alertas clínicos</h2>
+        {% if alergias or condicoes %}
+        <div class="chips">
+          {% for a in alergias %}
+            <span class="etiqueta etiqueta-alerta" title="{{ a['reacao'] }} ({{ a['gravidade'] | lower }})">Alergia: {{ a['substancia'] }}</span>
+          {% endfor %}
+          {% for c in condicoes %}
+            <span class="etiqueta etiqueta-info">{{ c['descricao'] }}</span>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="pequeno suave">Nenhuma alergia ou condição crônica registrada.</p>
+        {% endif %}
+      </section>
+    </aside>
+
+    <section class="coluna" aria-labelledby="titulo-historico">
+      <a class="voltar" href="{{ voltar_url }}">{{ voltar_rotulo }}</a>
+      <div class="cabecalho-historico">
+        <div>
+          <h1 id="titulo-historico">Histórico de atendimentos</h1>
+          <p class="pequeno suave">
+            {% if totais['total'] %}
+              {{ totais['total'] }} {{ "atendimento registrado" if totais['total'] == 1 else "atendimentos registrados" }}
+              {% if totais['primeiro'][:4] != totais['ultimo'][:4] %}entre {{ totais['primeiro'][:4] }} e {{ totais['ultimo'][:4] }}{% else %}em {{ totais['ultimo'][:4] }}{% endif %}
+            {% else %}
+              Nenhum atendimento registrado
+            {% endif %}
+          </p>
+        </div>
+        <button class="btn btn-secundario nao-imprimir" type="button" data-imprimir>Imprimir histórico</button>
+      </div>
+
+      {% if totais['total'] %}
+      <nav class="chips nao-imprimir" aria-label="Filtrar por tipo de atendimento">
+        {% for chave, (rotulo, _) in categorias.items() %}
+          <a class="chip {% if chave == categoria %}chip-ativo{% endif %}" href="{{ url_for('historico', paciente_id=paciente['id'], categoria=chave) }}"
+             {% if chave == categoria %}aria-current="page"{% endif %}>{{ rotulo }}</a>
+        {% endfor %}
+      </nav>
+      {% endif %}
+
+      {% if fontes_atrasadas %}
+      <p class="mensagem mensagem-aviso">{{ icone.aviso() }}
+        <span>
+          {{ fontes_atrasadas | length }} {{ "fonte com atraso" if fontes_atrasadas | length == 1 else "fontes com atraso" }}:
+          {% for f in fontes_atrasadas %}{{ f['nome'] }} ({{ f['municipio'] }}), última atualização {{ f['ultima_sincronizacao'] | tempo_relativo }}{{ "; " if not loop.last else "." }}{% endfor %}
+          Atendimentos recentes {{ "nessa unidade" if fontes_atrasadas | length == 1 else "nessas unidades" }} podem ainda não aparecer.
+        </span>
+      </p>
+      {% endif %}
+
+      {% for ano, itens in grupos %}
+        <h2 class="ano">{{ ano }}</h2>
+        {% for a in itens %}
+        <a class="cartao item-atendimento" href="{{ url_for('atendimento', atendimento_id=a['id']) }}">
+          <div class="data-bloco">
+            <span class="dia">{{ a['data_hora'][8:10] }}</span>
+            <span class="mes">{{ a['data_hora'] | mes_ano }}</span>
+          </div>
+          <div class="corpo">
+            <div class="titulo-linha">
+              <h3>{{ a['tipo'] }}</h3>
+              {% if a['etiqueta'] %}
+                <span class="etiqueta {{ 'etiqueta-alerta' if a['cid_codigo'] else 'etiqueta-info' }}">{{ ("CID " ~ a['etiqueta']) if a['cid_codigo'] else a['etiqueta'] }}</span>
+              {% endif %}
+            </div>
+            <p class="pequeno suave">{{ a['unidade'] }} ({{ a['unidade_municipio'] }}) · {{ a['profissional'] }} ({{ a['especialidade'] }})</p>
+            <p class="pequeno">{{ a['resumo'] }}</p>
+            <div class="rodape-item">
+              <span>Fonte: {{ a['sistema_origem'] }} · atualizado {{ a['ultima_sincronizacao'] | tempo_relativo }}</span>
+              <span>Ver detalhes →</span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="cartao sem-historico">
+          {% if totais['total'] %}
+            Nenhum atendimento nesta categoria.
+          {% else %}
+            Nenhum atendimento registrado para este paciente nas unidades integradas da região.
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      {% if ocultos %}
+      <a class="btn btn-secundario nao-imprimir" style="align-self:flex-start"
+         href="{{ url_for('historico', paciente_id=paciente['id'], categoria=categoria, todos=1) }}">
+        Carregar atendimentos anteriores ({{ ocultos }})
+      </a>
+      {% endif %}
+    </section>
+  </div>
+</main>
+{% endblock %}

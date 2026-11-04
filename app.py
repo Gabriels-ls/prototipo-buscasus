@@ -2,7 +2,8 @@
 import os
 import secrets
 from collections import Counter
-from datetime import timedelta
+from datetime import datetime, timedelta
+from itertools import groupby
 from functools import wraps
 
 from dotenv import load_dotenv
@@ -216,3 +217,90 @@ def resultados():
     repeticoes = Counter(p["nome_busca"] for p in pacientes)
     homonimos = any(n > 1 for n in repeticoes.values())
     return render_template("resultados.html", pacientes=pacientes, termo=termo, homonimos=homonimos)
+
+
+# ---------------------------------------------------------------------------
+# Histórico do paciente
+# ---------------------------------------------------------------------------
+
+CATEGORIAS = {
+    "todos": ("Todos", None),
+    "consultas": ("Consultas", ("Consulta médica", "Consulta de enfermagem")),
+    "vacinas": ("Vacinas", ("Vacinação",)),
+    "exames": ("Exames", ("Exame laboratorial",)),
+    "urgencia": ("Urgência", ("Urgência",)),
+    "odontologia": ("Odontologia", ("Consulta odontológica",)),
+    "internacoes": ("Internações", ("Internação",)),
+}
+LIMITE_INICIAL = 10
+
+
+def obter_paciente(paciente_id):
+    paciente = db.get_db().execute(
+        "SELECT p.*, u.nome AS unidade_referencia FROM pacientes p "
+        "LEFT JOIN unidades u ON u.id = p.unidade_referencia_id WHERE p.id = ?", (paciente_id,)).fetchone()
+    if paciente is None:
+        abort(404)
+    return paciente
+
+
+def link_voltar(padrao_url, padrao_rotulo, origem, rotulo_origem):
+    """Volta para a página anterior se ela for do próprio site e do tipo esperado."""
+    anterior = request.referrer or ""
+    if anterior.startswith(request.host_url) and origem in anterior:
+        return anterior, rotulo_origem
+    return padrao_url, padrao_rotulo
+
+
+def fontes_atrasadas():
+    limite = (datetime.now() - timedelta(hours=24)).isoformat()
+    return db.get_db().execute(
+        "SELECT nome, municipio, ultima_sincronizacao FROM unidades "
+        "WHERE ultima_sincronizacao < ? ORDER BY ultima_sincronizacao", (limite,)).fetchall()
+
+
+@app.route("/pacientes/<int:paciente_id>")
+@login_obrigatorio
+def historico(paciente_id):
+    con = db.get_db()
+    paciente = obter_paciente(paciente_id)
+    alergias = con.execute("SELECT * FROM alergias WHERE paciente_id = ?", (paciente_id,)).fetchall()
+    condicoes = con.execute("SELECT * FROM condicoes WHERE paciente_id = ?", (paciente_id,)).fetchall()
+
+    categoria = request.args.get("categoria", "todos")
+    if categoria not in CATEGORIAS:
+        categoria = "todos"
+    mostrar_todos = request.args.get("todos") == "1"
+
+    filtro, params = "", [paciente_id]
+    tipos = CATEGORIAS[categoria][1]
+    if tipos:
+        filtro = f"AND a.tipo IN ({','.join('?' * len(tipos))})"
+        params.extend(tipos)
+
+    atendimentos = con.execute(f"""
+        SELECT a.id, a.data_hora, a.tipo, a.resumo, a.cid_codigo,
+               COALESCE(a.cid_codigo,
+                        (SELECT i.vacina FROM imunizacoes i WHERE i.atendimento_id = a.id LIMIT 1),
+                        (SELECT e.nome FROM exames e WHERE e.atendimento_id = a.id LIMIT 1)) AS etiqueta,
+               u.nome AS unidade, u.municipio AS unidade_municipio, u.sistema_origem, u.ultima_sincronizacao,
+               pr.nome AS profissional, pr.especialidade
+        FROM atendimentos a
+        JOIN unidades u ON u.id = a.unidade_id
+        JOIN profissionais pr ON pr.id = a.profissional_id
+        WHERE a.paciente_id = ? {filtro}
+        ORDER BY a.data_hora DESC""", params).fetchall()
+
+    visiveis = atendimentos if mostrar_todos else atendimentos[:LIMITE_INICIAL]
+    grupos = [(ano, list(itens)) for ano, itens in groupby(visiveis, key=lambda a: a["data_hora"][:4])]
+    totais = con.execute(
+        "SELECT COUNT(*) AS total, MIN(data_hora) AS primeiro, MAX(data_hora) AS ultimo "
+        "FROM atendimentos WHERE paciente_id = ?", (paciente_id,)).fetchone()
+
+    voltar_url, voltar_rotulo = link_voltar(url_for("busca"), "← Voltar para a busca",
+                                            "/resultados", "← Voltar aos resultados")
+    return render_template(
+        "historico.html", paciente=paciente, alergias=alergias, condicoes=condicoes,
+        grupos=grupos, totais=totais, categorias=CATEGORIAS, categoria=categoria,
+        ocultos=len(atendimentos) - len(visiveis), fontes_atrasadas=fontes_atrasadas(),
+        voltar_url=voltar_url, voltar_rotulo=voltar_rotulo)
