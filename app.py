@@ -304,3 +304,35 @@ def historico(paciente_id):
         grupos=grupos, totais=totais, categorias=CATEGORIAS, categoria=categoria,
         ocultos=len(atendimentos) - len(visiveis), fontes_atrasadas=fontes_atrasadas(),
         voltar_url=voltar_url, voltar_rotulo=voltar_rotulo)
+
+
+# ---------------------------------------------------------------------------
+# Detalhe do atendimento
+# ---------------------------------------------------------------------------
+
+@app.route("/atendimentos/<int:atendimento_id>")
+@login_obrigatorio
+def atendimento(atendimento_id):
+    con = db.get_db()
+    at = con.execute("""
+        SELECT a.*, u.nome AS unidade, u.municipio AS unidade_municipio, u.cnes,
+               pr.nome AS profissional, pr.especialidade, pr.conselho, pr.registro
+        FROM atendimentos a
+        JOIN unidades u ON u.id = a.unidade_id
+        JOIN profissionais pr ON pr.id = a.profissional_id
+        WHERE a.id = ?""", (atendimento_id,)).fetchone()
+    if at is None:
+        abort(404)
+    paciente = obter_paciente(at["paciente_id"])
+    return render_template(
+        "atendimento.html", at=at, paciente=paciente,
+        prescricoes=con.execute("SELECT * FROM prescricoes WHERE atendimento_id = ?", (atendimento_id,)).fetchall(),
+        exames=con.execute("SELECT * FROM exames WHERE atendimento_id = ?", (atendimento_id,)).fetchall(),
+        imunizacoes=con.execute("SELECT * FROM imunizacoes WHERE atendimento_id = ?", (atendimento_id,)).fetchall(),
+        alergias=con.execute("SELECT * FROM alergias WHERE paciente_id = ?", (paciente["id"],)).fetchall())
+
+
+@app.errorhandler(404)
+def nao_encontrado(_erro):
+    return render_template("erro.html", titulo="Página não encontrada",
+                           mensagem="O endereço pode ter sido digitado errado ou o registro não existe mais."), 404

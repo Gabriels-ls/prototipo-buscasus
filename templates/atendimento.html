@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block titulo %}{{ at['tipo'] }} de {{ at['data_hora'] | data_br }} · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="conteudo conteudo-largo">
+  <a class="voltar" href="{{ url_for('historico', paciente_id=paciente['id']) }}">← Voltar ao histórico de {{ paciente['nome'] }}</a>
+
+  <header class="cartao cabecalho-atendimento">
+    <div class="data-bloco">
+      <span class="dia">{{ at['data_hora'][8:10] }}</span>
+      <span class="mes">{{ at['data_hora'] | mes_ano }}</span>
+    </div>
+    <div class="info">
+      <div class="titulo-linha">
+        <h1>{{ at['tipo'] }}</h1>
+        {% if at['cid_codigo'] %}<span class="etiqueta etiqueta-alerta">CID {{ at['cid_codigo'] }}</span>{% endif %}
+      </div>
+      <p class="pequeno suave">{{ at['data_hora'] | data_br }} às {{ at['data_hora'] | hora_br }} · Paciente: {{ paciente['nome'] }}, {{ paciente['data_nascimento'] | idade }} anos</p>
+    </div>
+    <button class="btn btn-secundario nao-imprimir" type="button" data-imprimir>Imprimir atendimento</button>
+  </header>
+
+  <div class="layout-atendimento">
+    <div class="coluna">
+      {% if at['anamnese'] %}
+      <section class="cartao secao"><h2>Motivo e anamnese</h2><p>{{ at['anamnese'] }}</p></section>
+      {% else %}
+      <section class="cartao secao"><h2>Resumo</h2><p>{{ at['resumo'] }}</p></section>
+      {% endif %}
+
+      {% if at['pa'] or at['fc'] or at['temperatura'] or at['spo2'] or at['peso'] %}
+      <section class="cartao secao">
+        <h2>Sinais vitais</h2>
+        <div class="sinais">
+          {% if at['pa'] %}<div class="sinal"><span>Pressão arterial</span><strong>{{ at['pa'] }} mmHg</strong></div>{% endif %}
+          {% if at['fc'] %}<div class="sinal"><span>Freq. cardíaca</span><strong>{{ at['fc'] }} bpm</strong></div>{% endif %}
+          {% if at['temperatura'] %}<div class="sinal"><span>Temperatura</span><strong>{{ "%.1f" | format(at['temperatura']) | replace(".", ",") }} °C</strong></div>{% endif %}
+          {% if at['spo2'] %}<div class="sinal"><span>Saturação O₂</span><strong>{{ at['spo2'] }}%</strong></div>{% endif %}
+          {% if at['peso'] %}<div class="sinal"><span>Peso</span><strong>{{ "%.1f" | format(at['peso']) | replace(".", ",") }} kg</strong></div>{% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if at['cid_codigo'] %}
+      <section class="cartao secao">
+        <h2>Diagnóstico</h2>
+        <div class="titulo-linha">
+          <span class="etiqueta etiqueta-alerta">CID {{ at['cid_codigo'] }}</span>
+          <span>{{ at['cid_descricao'] }}</span>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if imunizacoes %}
+      <section class="cartao secao">
+        <h2>Vacina aplicada</h2>
+        <ul class="lista-itens">
+          {% for i in imunizacoes %}
+          <li><strong>{{ i['vacina'] }} · {{ i['dose'] }}</strong><span>Lote {{ i['lote'] }} · {{ i['fabricante'] }}</span></li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if exames %}
+      <section class="cartao secao">
+        <h2>Resultados de exames</h2>
+        <ul class="lista-itens">
+          {% for e in exames %}<li><strong>{{ e['nome'] }}</strong><span>{{ e['resultado'] }}</span></li>{% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if prescricoes %}
+      <section class="cartao secao">
+        <h2>Medicamentos prescritos</h2>
+        <ul class="lista-itens">
+          {% for p in prescricoes %}<li><strong>{{ p['medicamento'] }}</strong><span>{{ p['posologia'] }}</span></li>{% endfor %}
+        </ul>
+        {% for a in alergias %}
+        <p class="mensagem mensagem-aviso pequeno">Alergia registrada do paciente: {{ a['substancia'] }} ({{ a['reacao'] | lower }})</p>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if at['conduta'] %}
+      <section class="cartao secao"><h2>Conduta e orientações</h2><p>{{ at['conduta'] }}</p></section>
+      {% endif %}
+    </div>
+
+    <aside class="coluna">
+      <section class="cartao secao">
+        <h2>Profissional</h2>
+        <dl class="detalhes">
+          <div><dt>Nome</dt><dd>{{ at['profissional'] }}</dd></div>
+          <div><dt>Especialidade</dt><dd>{{ at['especialidade'] }}</dd></div>
+          <div><dt>Registro</dt><dd>{{ at['conselho'] }} {{ at['registro'] }}</dd></div>
+        </dl>
+      </section>
+      <section class="cartao secao">
+        <h2>Unidade</h2>
+        <dl class="detalhes">
+          <div><dt>Estabelecimento</dt><dd>{{ at['unidade'] }}</dd></div>
+          <div><dt>Município</dt><dd>{{ at['unidade_municipio'] }}/SC</dd></div>
+          <div><dt>CNES</dt><dd>{{ at['cnes'] }}</dd></div>
+        </dl>
+      </section>
+    </aside>
+  </div>
+</main>
+{% endblock %}

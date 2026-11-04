@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }} · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="conteudo">
+  <section class="cartao vazio">
+    <h1 class="titulo-pagina">{{ titulo }}</h1>
+    <p class="suave">{{ mensagem }}</p>
+    <div class="acoes"><a class="btn btn-primario" href="{{ url_for('index') }}">Ir para a busca</a></div>
+  </section>
+</main>
+{% endblock %}
