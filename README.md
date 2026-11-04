@@ -24,6 +24,7 @@ Projeto desenvolvido para a **CIS-AMFRI** (Consórcio Público Interfederativo d
 ## Tecnologias
 
 - [Python 3.10+](https://www.python.org/)
+- [Gunicorn](https://gunicorn.org/) (servidor de produção) e [Render](https://render.com) (hospedagem)
 - [Flask](https://flask.palletsprojects.com/) (servidor web e templates Jinja)
 - [SQLite](https://www.sqlite.org/) (banco de dados em arquivo, já incluso no Python)
 - HTML, CSS e um pouco de JavaScript, sem frameworks de front-end
@@ -76,6 +77,28 @@ Acesse **http://localhost:5000**.
 
 Para recomeçar do zero, rode `python seed.py` de novo: o banco é apagado e recriado.
 
+## Deploy no Render
+
+O projeto já vem com o arquivo `render.yaml`, que configura tudo automaticamente.
+
+1. Envie o projeto para um repositório no GitHub.
+2. Acesse [render.com](https://render.com), entre com sua conta do GitHub e clique em **New > Blueprint**.
+3. Selecione o repositório `busca-sus` e confirme em **Apply**.
+4. Aguarde o build (cerca de 2 minutos). O endereço do site aparece no topo da página do serviço, no formato `https://busca-sus-xxxx.onrender.com`.
+
+A partir daí, cada `git push` na branch `main` atualiza o site sozinho.
+
+O que o `render.yaml` faz:
+
+- instala as dependências e inicia o site com o `gunicorn`;
+- recria o banco fictício a cada inicialização, para as datas de sincronização das unidades ficarem atuais;
+- gera uma `SECRET_KEY` aleatória e ativa o cookie de sessão seguro (HTTPS).
+
+Limitações do plano gratuito do Render:
+
+- O site "dorme" depois de 15 minutos sem acessos, e o primeiro acesso seguinte leva cerca de 1 minuto. Antes de uma apresentação, abra o site alguns minutos antes.
+- O disco é temporário: como o banco é recriado a cada inicialização, o registro de acessos e as buscas recentes voltam ao estado inicial de tempos em tempos. Para guardar dados de forma permanente, seria preciso um banco hospedado, como o PostgreSQL.
+
 ## Estrutura do projeto
 
 ```
@@ -86,6 +109,7 @@ busca-sus/
 ├── schema.sql          # criação das tabelas
 ├── seed.py             # gera o banco com dados fictícios
 ├── requirements.txt
+├── render.yaml         # configuração de deploy no Render
 ├── .env.example
 ├── static/
 │   ├── css/style.css   # cores e componentes do protótipo no Figma
