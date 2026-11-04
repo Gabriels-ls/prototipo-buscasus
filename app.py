@@ -5,7 +5,8 @@ from datetime import timedelta
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, abort, g, redirect, request, session, url_for
+from flask import Flask, abort, g, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 
 import db
 import utils
@@ -66,3 +67,42 @@ def login_obrigatorio(view):
             return redirect(url_for("login", proximo=request.full_path))
         return view(*args, **kwargs)
     return interna
+
+
+# ---------------------------------------------------------------------------
+# Autenticação
+# ---------------------------------------------------------------------------
+
+@app.route("/")
+def index():
+    return redirect(url_for("busca") if g.usuario else url_for("login"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if g.usuario:
+        return redirect(url_for("busca"))
+    erro = None
+    matricula = ""
+    if request.method == "POST":
+        matricula = request.form.get("matricula", "").strip()
+        senha = request.form.get("senha", "")
+        usuario = db.get_db().execute(
+            "SELECT * FROM usuarios WHERE matricula = ?", (matricula,)).fetchone()
+        if usuario and check_password_hash(usuario["senha_hash"], senha):
+            session.clear()
+            session.permanent = True
+            session["usuario_id"] = usuario["id"]
+            proximo = request.args.get("proximo", "")
+            # Só aceita redirecionar para caminhos internos
+            if not proximo.startswith("/") or proximo.startswith("//"):
+                proximo = url_for("busca")
+            return redirect(proximo)
+        erro = "Matrícula ou senha incorretas. Confira os dados e tente de novo."
+    return render_template("login.html", erro=erro, matricula=matricula)
+
+
+@app.route("/sair", methods=["POST"])
+def sair():
+    session.clear()
+    return redirect(url_for("login"))

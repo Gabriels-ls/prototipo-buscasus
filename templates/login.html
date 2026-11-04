@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}Entrar · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="pagina-login">
+  <div class="marca-login">
+    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="">
+    Busca SUS
+  </div>
+
+  <form class="cartao cartao-login" method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div>
+      <h1>Acesse sua conta</h1>
+      <p class="suave">Use suas credenciais do sistema municipal de saúde.</p>
+    </div>
+
+    {% if erro %}<p class="mensagem mensagem-erro" role="alert">{{ erro }}</p>{% endif %}
+
+    <div class="campo">
+      <label for="matricula">Matrícula</label>
+      <input id="matricula" name="matricula" value="{{ matricula }}" autocomplete="username"
+             inputmode="numeric" placeholder="Ex.: 1001" required autofocus>
+    </div>
+    <div class="campo">
+      <label for="senha">Senha</label>
+      <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="••••••••" required>
+    </div>
+    <a href="#" class="pequeno" onclick="alert('Procure o administrador do sistema na sua unidade para redefinir a senha.'); return false;">Esqueci minha senha</a>
+    <button class="btn btn-primario btn-largo" type="submit">Entrar</button>
+    <p class="aviso-lgpd">Acesso restrito a profissionais autorizados. Todos os acessos são registrados conforme a LGPD.</p>
+  </form>
+
+  <p class="pequeno suave">CIS-AMFRI · Consórcio Público Interfederativo de Saúde da Região da Foz do Rio Itajaí</p>
+</main>
+{% endblock %}
