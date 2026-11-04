@@ -8,6 +8,7 @@ from functools import wraps
 
 from dotenv import load_dotenv
 from flask import Flask, abort, g, redirect, render_template, request, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash
 
 import db
@@ -22,7 +23,11 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+    # Em produção (HTTPS) o cookie de sessão só trafega por conexão segura
+    SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SEGURO") == "1",
 )
+# Em serviços como o Render o app fica atrás de um proxy que cuida do HTTPS
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 db.init_app(app)
 
 # Filtros usados nos templates
