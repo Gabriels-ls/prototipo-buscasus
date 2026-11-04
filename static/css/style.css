@@ -178,7 +178,7 @@ a:hover { text-decoration: underline; }
 .ano { font-size: 14px; font-weight: 600; color: var(--texto-suave); margin-top: 4px; }
 .item-atendimento { display: flex; gap: 20px; padding: 20px; color: var(--texto); font-weight: 400; }
 .item-atendimento:hover { border-color: var(--primaria); text-decoration: none; }
-.data-bloco { flex: none; width: 80px; padding: 10px 0; border-radius: 10px; background: var(--primaria-clara); color: var(--primaria); display: flex; flex-direction: column; align-items: center; }
+.data-bloco { flex: none; align-self: flex-start; width: 80px; padding: 10px 0; border-radius: 10px; background: var(--primaria-clara); color: var(--primaria); display: flex; flex-direction: column; align-items: center; }
 .data-bloco .dia { font-size: 24px; font-weight: 700; line-height: 1.2; }
 .data-bloco .mes { font-size: 12px; font-weight: 600; }
 .item-atendimento .corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -214,6 +214,7 @@ a:hover { text-decoration: underline; }
 @media (max-width: 1000px) {
   .layout-historico, .layout-atendimento { grid-template-columns: 1fr; }
   .ficha { position: static; }
+  .ficha .detalhes { display: grid; grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 700px) {
   .barra { padding: 0 16px; }
