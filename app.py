@@ -185,8 +185,22 @@ def contexto_busca(**extra):
     return contexto
 
 
-def buscas_recentes():
-    return []
+def buscas_recentes(limite=5):
+    """Últimos pacientes consultados pelo usuário logado."""
+    return db.get_db().execute(
+        "SELECT p.id, p.nome, p.cpf, p.data_nascimento, MAX(ac.data_hora) AS ultimo_acesso "
+        "FROM acessos ac JOIN pacientes p ON p.id = ac.paciente_id "
+        "WHERE ac.usuario_id = ? GROUP BY p.id ORDER BY ultimo_acesso DESC LIMIT ?",
+        (g.usuario["id"], limite)).fetchall()
+
+
+def registrar_acesso(paciente_id, acao, atendimento_id=None):
+    """Grava quem consultou o prontuário e quando (trilha de auditoria da LGPD)."""
+    con = db.get_db()
+    con.execute(
+        "INSERT INTO acessos (usuario_id, paciente_id, atendimento_id, acao, data_hora) VALUES (?, ?, ?, ?, ?)",
+        (g.usuario["id"], paciente_id, atendimento_id, acao, datetime.now().isoformat(timespec="seconds")))
+    con.commit()
 
 
 @app.route("/busca")
@@ -297,6 +311,7 @@ def historico(paciente_id):
         "SELECT COUNT(*) AS total, MIN(data_hora) AS primeiro, MAX(data_hora) AS ultimo "
         "FROM atendimentos WHERE paciente_id = ?", (paciente_id,)).fetchone()
 
+    registrar_acesso(paciente_id, "historico")
     voltar_url, voltar_rotulo = link_voltar(url_for("busca"), "← Voltar para a busca",
                                             "/resultados", "← Voltar aos resultados")
     return render_template(
@@ -324,6 +339,7 @@ def atendimento(atendimento_id):
     if at is None:
         abort(404)
     paciente = obter_paciente(at["paciente_id"])
+    registrar_acesso(paciente["id"], "atendimento", atendimento_id)
     return render_template(
         "atendimento.html", at=at, paciente=paciente,
         prescricoes=con.execute("SELECT * FROM prescricoes WHERE atendimento_id = ?", (atendimento_id,)).fetchall(),
