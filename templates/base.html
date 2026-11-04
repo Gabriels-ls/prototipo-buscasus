@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Busca SUS{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  {% if g.usuario %}
+  <header class="barra">
+    <a class="marca" href="{{ url_for('busca') }}">
+      <span class="marca-icone"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></span>
+      Busca SUS
+    </a>
+    <div class="barra-usuario">
+      <span class="nome-usuario">{{ g.usuario['nome'] }} · {{ g.usuario['unidade_nome'] }}</span>
+      <form method="post" action="{{ url_for('sair') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit">Sair</button>
+      </form>
+    </div>
+  </header>
+  {% endif %}
+
+  {% block corpo %}{% endblock %}
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
