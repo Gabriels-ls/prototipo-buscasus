@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% import "_icones.html" as icone %}
+{% if nivel == "unidade" %}{% set titulo_nivel = unidade['nome'] %}
+{% elif nivel == "municipio" %}{% set titulo_nivel = municipio %}
+{% else %}{% set titulo_nivel = nome_regiao %}{% endif %}
+{% block titulo %}Painel · {{ titulo_nivel }} · Busca SUS{% endblock %}
+{% block corpo %}
+<main class="conteudo conteudo-largo painel">
+
+  {# Caminho: região › município › unidade #}
+  {% if nivel != "regiao" %}
+  <nav class="trilha" aria-label="Nível do painel">
+    <ol>
+      <li>{% if nivel != "regiao" %}<a href="{{ url_for('painel', periodo=periodo) }}">{{ nome_regiao }}</a>{% else %}<span aria-current="page">{{ nome_regiao }}</span>{% endif %}</li>
+      {% if municipio %}
+      <li>{% if nivel == "unidade" %}<a href="{{ url_for('painel', municipio=municipio, periodo=periodo) }}">{{ municipio }}</a>{% else %}<span aria-current="page">{{ municipio }}</span>{% endif %}</li>
+      {% endif %}
+      {% if unidade %}<li><span aria-current="page">{{ unidade['nome'] }}</span></li>{% endif %}
+    </ol>
+  </nav>
+  {% endif %}
+
+  <div class="cabecalho-painel">
+    <div>
+      <h1 class="titulo-pagina">{{ titulo_nivel }}</h1>
+      <p class="suave">
+        {% if nivel == "regiao" %}{{ municipios | length }} municípios · {{ unidades | length }} unidades integradas
+        {% elif nivel == "municipio" %}Município da {{ nome_regiao }} · {{ sincronizacao | length }} unidade{{ 's' if sincronizacao | length != 1 }}
+        {% else %}{{ unidade['tipo'] }} · {{ unidade['municipio'] }} · CNES {{ unidade['cnes'] }} · {{ unidade['sistema_origem'] }}{% endif %}
+        · {{ rotulo_periodo | lower }}
+      </p>
+    </div>
+
+    <form class="filtros-painel nao-imprimir" method="get" action="{{ url_for('painel') }}">
+      <div class="campo">
+        <label for="local">Local</label>
+        <select id="local" name="local">
+          <option value="" {% if nivel == "regiao" %}selected{% endif %}>{{ nome_regiao }} (toda a região)</option>
+          <optgroup label="Municípios">
+            {% for m in municipios %}
+            <option value="m:{{ m }}" {% if nivel == "municipio" and m == municipio %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </optgroup>
+          {% for m, lista in unidades | groupby("municipio") %}
+          <optgroup label="Unidades de {{ m }}">
+            {% for u in lista %}
+            <option value="u:{{ u['id'] }}" {% if unidade and u['id'] == unidade['id'] %}selected{% endif %}>{{ u['nome'] }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="periodo">Período</label>
+        <select id="periodo" name="periodo">
+          {% for chave, (rotulo, _dias) in periodos.items() %}
+          <option value="{{ chave }}" {% if chave == periodo %}selected{% endif %}>{{ rotulo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primario" type="submit">Aplicar</button>
+    </form>
+  </div>
+
+  <div class="atalhos-painel chips nao-imprimir">
+    <a class="chip {% if nivel == 'regiao' %}chip-ativo{% endif %}" href="{{ url_for('painel', periodo=periodo) }}">Região</a>
+    <a class="chip {% if nivel == 'municipio' and municipio == g.usuario['unidade_municipio'] %}chip-ativo{% endif %}"
+       href="{{ url_for('painel', municipio=g.usuario['unidade_municipio'], periodo=periodo) }}">Meu município</a>
+    <a class="chip {% if unidade and unidade['id'] == g.usuario['unidade_id'] %}chip-ativo{% endif %}"
+       href="{{ url_for('painel', unidade=g.usuario['unidade_id'], periodo=periodo) }}">Minha unidade</a>
+  </div>
+
+  <p class="mensagem mensagem-aviso">{{ icone.aviso() }}<span>Dados fictícios, gerados apenas para demonstração.</span></p>
+
+  {# Indicadores principais #}
+  <section class="indicadores" aria-label="Indicadores principais">
+    <div class="cartao indicador"><span>Atendimentos</span><strong>{{ resumo['atendimentos'] }}</strong></div>
+    <div class="cartao indicador"><span>Pacientes atendidos</span><strong>{{ resumo['pacientes'] }}</strong></div>
+    <div class="cartao indicador"><span>Vacinas aplicadas</span><strong>{{ resumo['vacinas'] or 0 }}</strong></div>
+    <div class="cartao indicador"><span>Urgências</span><strong>{{ resumo['urgencias'] or 0 }}</strong></div>
+    <div class="cartao indicador"><span>Internações</span><strong>{{ resumo['internacoes'] or 0 }}</strong></div>
+    <div class="cartao indicador {% if atrasadas %}indicador-alerta{% endif %}">
+      <span>Sincronização atrasada</span>
+      <strong>{{ atrasadas }}<small> de {{ sincronizacao | length }}</small></strong>
+    </div>
+  </section>
+
+  <div class="grade-painel">
+    {# Atendimentos por mês #}
+    <section class="cartao bloco-painel bloco-largo">
+      <h2>Atendimentos por mês</h2>
+      <div class="grafico-colunas" role="img"
+           aria-label="Atendimentos por mês: {% for s in serie %}{{ s['rotulo'] }} {{ s['total'] }}{{ ', ' if not loop.last }}{% endfor %}">
+        {% for s in serie %}
+        <div class="coluna" title="{{ s['rotulo'] }}: {{ s['total'] }} atendimentos">
+          <span class="valor">{{ s['total'] }}</span>
+          <span class="barra-coluna" style="height: {{ (s['total'] / maximo_serie * 100) | round(1) }}%"></span>
+          <span class="rotulo-coluna">{{ s['rotulo'] }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# Por tipo #}
+    <section class="cartao bloco-painel">
+      <h2>Atendimentos por tipo</h2>
+      {% if por_tipo %}
+      {% set maior = por_tipo[0]['total'] %}
+      <ul class="barras-horizontais">
+        {% for t in por_tipo %}
+        <li>
+          <div class="linha-barra"><span>{{ t['tipo'] }}</span><strong>{{ t['total'] }} <small>({{ (t['total'] / resumo['atendimentos'] * 100) | round | int }}%)</small></strong></div>
+          <div class="trilho"><span style="width: {{ (t['total'] / maior * 100) | round(1) }}%"></span></div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="suave">Nenhum atendimento no período.</p>{% endif %}
+    </section>
+
+    {# Diagnósticos #}
+    <section class="cartao bloco-painel">
+      <h2>Principais diagnósticos (CID-10)</h2>
+      {% if diagnosticos %}
+      <ol class="lista-ranking">
+        {% for d in diagnosticos %}
+        <li><span class="etiqueta etiqueta-info">{{ d['cid_codigo'] }}</span><span class="descricao">{{ d['cid_descricao'] }}</span><strong>{{ d['total'] }}</strong></li>
+        {% endfor %}
+      </ol>
+      {% else %}<p class="suave">Nenhum diagnóstico registrado no período.</p>{% endif %}
+    </section>
+
+    {# Detalhamento do nível abaixo #}
+    <section class="cartao bloco-painel bloco-largo">
+      <h2>{% if nivel == "regiao" %}Municípios{% elif nivel == "municipio" %}Unidades{% else %}Profissionais com mais atendimentos{% endif %}</h2>
+      {% if detalhamento %}
+      <div class="tabela-rolagem">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th scope="col">{% if nivel == "regiao" %}Município{% elif nivel == "municipio" %}Unidade{% else %}Profissional{% endif %}</th>
+              {% if nivel == "regiao" %}<th scope="col" class="num">Unidades</th>{% endif %}
+              <th scope="col" class="num">Pacientes</th>
+              <th scope="col" class="num">Atendimentos</th>
+              <th scope="col" class="coluna-barra"><span class="visualmente-oculto">Proporção</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set maior = detalhamento[0]['atendimentos'] %}
+            {% for d in detalhamento %}
+            <tr>
+              <td>
+                {% if nivel == "regiao" %}<a href="{{ url_for('painel', municipio=d['nome'], periodo=periodo) }}">{{ d['nome'] }}</a>
+                {% elif nivel == "municipio" %}<a href="{{ url_for('painel', unidade=d['id'], periodo=periodo) }}">{{ d['nome'] }}</a> <span class="suave pequeno">{{ d['tipo'] }}</span>
+                {% else %}{{ d['nome'] }} <span class="suave pequeno">{{ d['especialidade'] }}</span>{% endif %}
+              </td>
+              {% if nivel == "regiao" %}<td class="num">{{ d['unidades'] }}</td>{% endif %}
+              <td class="num">{{ d['pacientes'] }}</td>
+              <td class="num"><strong>{{ d['atendimentos'] }}</strong></td>
+              <td class="coluna-barra"><div class="trilho"><span style="width: {{ (d['atendimentos'] / maior * 100) | round(1) }}%"></span></div></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<p class="suave">Nenhum atendimento no período.</p>{% endif %}
+    </section>
+
+    {# Sincronização #}
+    <section class="cartao bloco-painel bloco-largo">
+      <h2>Sincronização das unidades</h2>
+      <ul class="lista-sincronizacao">
+        {% for s in sincronizacao %}
+        {% set u = s['unidade'] %}
+        <li class="{% if s['atrasada'] %}atrasada{% endif %}">
+          <span class="status" aria-hidden="true">{{ '!' if s['atrasada'] else '✓' }}</span>
+          <span class="nome-unidade">
+            {% if nivel != "unidade" %}<a href="{{ url_for('painel', unidade=u['id'], periodo=periodo) }}">{{ u['nome'] }}</a>{% else %}{{ u['nome'] }}{% endif %}
+            <span class="suave pequeno">{{ u['tipo'] }}{% if nivel == "regiao" %} · {{ u['municipio'] }}{% endif %} · {{ u['sistema_origem'] }}</span>
+          </span>
+          <span class="quando">
+            <strong>{{ 'Atrasada' if s['atrasada'] else 'Em dia' }}</strong>
+            <span class="suave pequeno">{{ u['ultima_sincronizacao'] | tempo_relativo }}</span>
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</main>
+{% endblock %}

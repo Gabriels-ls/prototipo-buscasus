@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=6">
   <script>
     // Aplica as preferências de acessibilidade antes de desenhar a página (evita "piscar")
     try {
@@ -20,10 +20,16 @@
 <body>
   {% if g.usuario %}
   <header class="barra">
-    <a class="marca" href="{{ url_for('busca') }}">
-      <span class="marca-icone"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></span>
-      Busca SUS
-    </a>
+    <div class="barra-esquerda">
+      <a class="marca" href="{{ url_for('busca') }}" aria-label="Busca SUS: página inicial" title="Busca SUS">
+        <span class="marca-icone"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></span>
+      </a>
+      {% set no_painel = request.endpoint == 'painel' %}
+      <nav class="menu-principal" aria-label="Menu principal">
+        <a href="{{ url_for('busca') }}" {% if not no_painel %}aria-current="page"{% endif %}>Buscar paciente</a>
+        <a href="{{ url_for('painel') }}" {% if no_painel %}aria-current="page"{% endif %}>Painel</a>
+      </nav>
+    </div>
     <div class="barra-usuario">
       <span class="nome-usuario">{{ g.usuario['nome'] }} · {{ g.usuario['unidade_nome'] }}{% if g.usuario['unidade_municipio'] %} <span class="cidade-unidade">({{ g.usuario['unidade_municipio'] }})</span>{% endif %}</span>
       <form method="post" action="{{ url_for('sair') }}">
@@ -42,6 +48,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=5"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=6"></script>
 </body>
 </html>

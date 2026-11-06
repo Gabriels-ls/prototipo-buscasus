@@ -353,6 +353,135 @@ def atendimento(atendimento_id):
         alergias=con.execute("SELECT * FROM alergias WHERE paciente_id = ?", (paciente["id"],)).fetchall())
 
 
+# ---------------------------------------------------------------------------
+# Painel gerencial: região AMFRI → município → unidade
+# ---------------------------------------------------------------------------
+
+PERIODOS = {"30": ("Últimos 30 dias", 30), "90": ("Últimos 90 dias", 90),
+            "365": ("Últimos 12 meses", 365), "tudo": ("Todo o período", None)}
+NOME_REGIAO = "Região AMFRI"
+
+
+def _meses_ate(hoje, quantidade):
+    """Lista 'AAAA-MM' dos últimos N meses, do mais antigo ao atual."""
+    ano, mes = hoje.year, hoje.month
+    meses = []
+    for _ in range(quantidade):
+        meses.append(f"{ano:04d}-{mes:02d}")
+        mes -= 1
+        if mes == 0:
+            ano, mes = ano - 1, 12
+    return list(reversed(meses))
+
+
+@app.route("/painel")
+@login_obrigatorio
+def painel():
+    con = db.get_db()
+    unidades = con.execute("SELECT * FROM unidades ORDER BY municipio, nome").fetchall()
+    municipios = sorted({u["municipio"] for u in unidades})
+
+    # O seletor "local" do formulário vira ?municipio= ou ?unidade= (links ficam limpos)
+    local = request.args.get("local")
+    if local is not None:
+        destino = {"periodo": request.args.get("periodo", "365")}
+        if local.startswith("u:"):
+            destino["unidade"] = local[2:]
+        elif local.startswith("m:"):
+            destino["municipio"] = local[2:]
+        return redirect(url_for("painel", **destino))
+
+    # Nível escolhido: unidade > município > região
+    unidade = municipio = None
+    if request.args.get("unidade", "").isdigit():
+        unidade = next((u for u in unidades if u["id"] == int(request.args["unidade"])), None)
+        if unidade is None:
+            abort(404)
+        municipio = unidade["municipio"]
+    elif request.args.get("municipio"):
+        municipio = request.args["municipio"]
+        if municipio not in municipios:
+            abort(404)
+    nivel = "unidade" if unidade else "municipio" if municipio else "regiao"
+
+    periodo = request.args.get("periodo", "365")
+    if periodo not in PERIODOS:
+        periodo = "365"
+    rotulo_periodo, dias = PERIODOS[periodo]
+
+    # Filtros SQL comuns
+    hoje = datetime.now()
+
+    def montar_filtro(desde=None):
+        where, valores = ["1 = 1"], []
+        if desde:
+            where.append("a.data_hora >= ?")
+            valores.append(desde)
+        if unidade:
+            where.append("a.unidade_id = ?")
+            valores.append(unidade["id"])
+        elif municipio:
+            where.append("u.municipio = ?")
+            valores.append(municipio)
+        return " AND ".join(where), valores
+
+    filtro, params = montar_filtro((hoje - timedelta(days=dias)).isoformat(timespec="seconds") if dias else None)
+    base = f"FROM atendimentos a JOIN unidades u ON u.id = a.unidade_id WHERE {filtro}"
+
+    def consulta(sql, extra=()):
+        return con.execute(sql, (*params, *extra)).fetchall()
+
+    resumo = consulta(f"""SELECT COUNT(*) AS atendimentos, COUNT(DISTINCT a.paciente_id) AS pacientes,
+        SUM(a.tipo = 'Vacinação') AS vacinas, SUM(a.tipo = 'Urgência') AS urgencias,
+        SUM(a.tipo = 'Internação') AS internacoes {base}""")[0]
+
+    por_tipo = consulta(f"SELECT a.tipo, COUNT(*) AS total {base} GROUP BY a.tipo ORDER BY total DESC")
+
+    # Série mensal: sempre 12 meses (ou o período, se for menor que isso)
+    qtd_meses = 12 if not dias or dias >= 365 else max(1, round(dias / 30) + 1)
+    meses = _meses_ate(hoje, qtd_meses)
+    filtro_mes, params_mes = montar_filtro(meses[0] + "-01")
+    contagem = {r["mes"]: r["total"] for r in con.execute(
+        "SELECT substr(a.data_hora, 1, 7) AS mes, COUNT(*) AS total "
+        f"FROM atendimentos a JOIN unidades u ON u.id = a.unidade_id WHERE {filtro_mes} GROUP BY mes",
+        params_mes)}
+    serie = [{"mes": m, "rotulo": f"{utils.MESES[int(m[5:]) - 1]}/{m[2:4]}", "total": contagem.get(m, 0)}
+             for m in meses]
+
+    diagnosticos = consulta(f"""SELECT a.cid_codigo, a.cid_descricao, COUNT(*) AS total {base}
+        AND a.cid_codigo IS NOT NULL GROUP BY a.cid_codigo ORDER BY total DESC LIMIT 6""")
+
+    # Tabela do nível abaixo (municípios da região ou unidades do município)
+    if nivel == "regiao":
+        detalhamento = consulta(f"""SELECT u.municipio AS nome, COUNT(*) AS atendimentos,
+            COUNT(DISTINCT a.paciente_id) AS pacientes, COUNT(DISTINCT a.unidade_id) AS unidades
+            {base} GROUP BY u.municipio ORDER BY atendimentos DESC""")
+    elif nivel == "municipio":
+        detalhamento = consulta(f"""SELECT u.id, u.nome, u.tipo, COUNT(*) AS atendimentos,
+            COUNT(DISTINCT a.paciente_id) AS pacientes
+            {base} GROUP BY u.id ORDER BY atendimentos DESC""")
+    else:
+        detalhamento = consulta(f"""SELECT pr.nome, pr.especialidade, COUNT(*) AS atendimentos,
+            COUNT(DISTINCT a.paciente_id) AS pacientes
+            FROM atendimentos a JOIN unidades u ON u.id = a.unidade_id
+            JOIN profissionais pr ON pr.id = a.profissional_id
+            WHERE {filtro} GROUP BY pr.id ORDER BY atendimentos DESC LIMIT 8""")
+
+    # Situação da sincronização das unidades do nível
+    limite = (hoje - timedelta(hours=24)).isoformat()
+    unidades_nivel = [u for u in unidades
+                      if (not municipio or u["municipio"] == municipio) and (not unidade or u["id"] == unidade["id"])]
+    sincronizacao = [{"unidade": u, "atrasada": u["ultima_sincronizacao"] < limite} for u in unidades_nivel]
+
+    return render_template(
+        "painel.html", nivel=nivel, unidade=unidade, municipio=municipio, municipios=municipios,
+        unidades=unidades, nome_regiao=NOME_REGIAO, periodos=PERIODOS, periodo=periodo,
+        rotulo_periodo=rotulo_periodo, resumo=resumo, por_tipo=por_tipo, serie=serie,
+        maximo_serie=max([s["total"] for s in serie] + [1]), diagnosticos=diagnosticos,
+        detalhamento=detalhamento, sincronizacao=sincronizacao,
+        atrasadas=sum(s["atrasada"] for s in sincronizacao))
+
+
 @app.errorhandler(404)
 def nao_encontrado(_erro):
     return render_template("erro.html", titulo="Página não encontrada",
