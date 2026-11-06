@@ -9,6 +9,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    // Aplica as preferências de acessibilidade antes de desenhar a página (evita "piscar")
+    try {
+      var h = document.documentElement;
+      var f = localStorage.getItem("a11y-fonte");
+      if (f && f !== "0") h.setAttribute("data-fonte", f);
+      if (localStorage.getItem("a11y-daltonico") === "1") h.setAttribute("data-daltonico", "");
+    } catch (e) {}
+  </script>
 </head>
 <body>
   {% if g.usuario %}
@@ -18,7 +27,7 @@
       Busca SUS
     </a>
     <div class="barra-usuario">
-      <span class="nome-usuario">{{ g.usuario['nome'] }} · {{ g.usuario['unidade_nome'] }}</span>
+      <span class="nome-usuario">{{ g.usuario['nome'] }} · {{ g.usuario['unidade_nome'] }}{% if g.usuario['unidade_municipio'] %} <span class="cidade-unidade">({{ g.usuario['unidade_municipio'] }})</span>{% endif %}</span>
       <form method="post" action="{{ url_for('sair') }}">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <button type="submit">Sair</button>
@@ -28,6 +37,20 @@
   {% endif %}
 
   {% block corpo %}{% endblock %}
+
+  <div class="acessibilidade" role="toolbar" aria-label="Acessibilidade">
+    <button type="button" id="a11y-daltonico" aria-pressed="false" title="Modo daltônico: cores seguras para daltonismo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="rotulo">Daltônico</span>
+    </button>
+    <button type="button" id="a11y-fonte-menos" title="Diminuir fonte" aria-label="Diminuir fonte">A−</button>
+    <button type="button" id="a11y-fonte-mais" title="Aumentar fonte" aria-label="Aumentar fonte">A+</button>
+    <button type="button" id="a11y-lupa" aria-pressed="false" title="Lupa: amplia onde você passar o mouse (Esc para desligar)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+      <span class="rotulo">Lupa</span>
+    </button>
+  </div>
+  <div class="lupa" aria-hidden="true"><div class="lupa-conteudo"></div></div>
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>

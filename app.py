@@ -63,7 +63,7 @@ def carregar_usuario():
     usuario_id = session.get("usuario_id")
     if usuario_id:
         g.usuario = db.get_db().execute(
-            "SELECT u.*, un.nome AS unidade_nome FROM usuarios u "
+            "SELECT u.*, un.nome AS unidade_nome, un.municipio AS unidade_municipio FROM usuarios u "
             "JOIN unidades un ON un.id = u.unidade_id WHERE u.id = ?", (usuario_id,)).fetchone()
 
 
