@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3">
   <script>
     // Aplica as preferências de acessibilidade antes de desenhar a página (evita "piscar")
     try {
@@ -45,13 +45,8 @@
     </button>
     <button type="button" id="a11y-fonte-menos" title="Diminuir fonte" aria-label="Diminuir fonte">A−</button>
     <button type="button" id="a11y-fonte-mais" title="Aumentar fonte" aria-label="Aumentar fonte">A+</button>
-    <button type="button" id="a11y-lupa" aria-pressed="false" title="Lupa: amplia onde você passar o mouse (Esc para desligar)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
-      <span class="rotulo">Lupa</span>
-    </button>
   </div>
-  <div class="lupa" aria-hidden="true"><div class="lupa-conteudo"></div></div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=3"></script>
 </body>
 </html>
