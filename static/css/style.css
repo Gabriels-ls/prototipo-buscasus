@@ -20,9 +20,6 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; font-size: 100%; }
-html[data-fonte="1"] { font-size: 112.5%; }
-html[data-fonte="2"] { font-size: 125%; }
-html[data-fonte="3"] { font-size: 137.5%; }
 body {
   margin: 0;
   font-family: var(--fonte);
@@ -247,7 +244,7 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 4px 16px rgba(22, 36, 61, .15);
 }
 .acessibilidade button {
-  min-width: 44px; height: 44px; padding: 0 12px; border-radius: 999px;
+  width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 999px;
   border: 1px solid transparent; background: var(--fundo); color: var(--texto);
   font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
@@ -258,27 +255,76 @@ a:hover { text-decoration: underline; }
 .acessibilidade svg { width: 20px; height: 20px; flex: none; }
 @media (max-width: 700px) {
   .acessibilidade { right: 8px; bottom: 8px; }
-  .acessibilidade .rotulo { display: none; }
 }
 
-/* Modo daltônico: paleta segura (Okabe-Ito) e sinais que não dependem só da cor */
+/* Modo daltônico: par azul/laranja (Okabe-Ito), alto contraste e sinais que
+   não dependem só da cor (ícones, sublinhados, bordas grossas, ✓ na seleção) */
 html[data-daltonico] {
-  --primaria: #0059A3;
-  --primaria-escura: #0B2E5C;
-  --primaria-clara: #E1EEFA;
-  --alerta: #8A4B00;
-  --alerta-claro: #FFF0D6;
-  --acento: #0072B2;
-  --erro: #8E1B6E;
-  --erro-claro: #F8E4F1;
+  --primaria: #004C99;
+  --primaria-escura: #002147;
+  --primaria-clara: #D6E8FA;
+  --fundo: #FFFFFF;
+  --superficie: #FFFFFF;
+  --borda: #6B7280;
+  --texto: #000000;
+  --texto-suave: #2E3440;
+  --acento: #E69F00;
+  --alerta: #6B3A00;
+  --alerta-claro: #FFE1A8;
+  --erro: #9C2F00;
+  --erro-claro: #FFD9C7;
 }
-html[data-daltonico] .mensagem-erro,
-html[data-daltonico] .mensagem-aviso,
-html[data-daltonico] .etiqueta-alerta { border-left: 4px solid currentColor; font-weight: 600; }
+/* Cabeçalho com faixa laranja */
+html[data-daltonico] .barra { border-bottom: 5px solid var(--acento); }
+/* Links sempre sublinhados */
+html[data-daltonico] a:not(.btn):not(.chip):not(.marca):not(.item-recente):not(.item-atendimento) {
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px;
+}
+/* Bordas mais grossas e escuras */
+html[data-daltonico] .cartao,
+html[data-daltonico] .campo input,
+html[data-daltonico] .campo select,
+html[data-daltonico] .chip,
+html[data-daltonico] .btn { border-width: 2px; }
+html[data-daltonico] .btn-primario { border-color: var(--primaria-escura); }
+html[data-daltonico] .btn-secundario { border-color: var(--primaria); }
+html[data-daltonico] .campo-busca { border-width: 3px; border-color: var(--primaria-escura); }
+/* Hover / seleção em laranja, que contrasta com o azul para todos os tipos de daltonismo */
+html[data-daltonico] .btn-primario:hover { background: var(--primaria-escura); box-shadow: 0 0 0 3px var(--acento); }
+html[data-daltonico] .btn-secundario:hover,
+html[data-daltonico] .chip:hover,
+html[data-daltonico] .item-atendimento:hover,
+html[data-daltonico] .acessibilidade button:hover { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento); }
+html[data-daltonico] .item-recente:hover { background: #FFF4DB; box-shadow: inset 5px 0 0 var(--acento); }
+html[data-daltonico] .chip-ativo,
+html[data-daltonico] .chips input:checked + .chip { background: var(--acento); color: #000; border-color: #000; font-weight: 700; }
+html[data-daltonico] .chip-ativo::before,
+html[data-daltonico] .chips input:checked + .chip::before { content: "✓ "; white-space: pre; }
+html[data-daltonico] .acessibilidade button[aria-pressed="true"] { background: var(--acento); color: #000; border-color: #000; }
+/* Blocos de data e avatares com fundo escuro e texto branco */
+html[data-daltonico] .data-bloco,
+html[data-daltonico] .avatar { background: var(--primaria); color: #fff; }
+html[data-daltonico] .etiqueta-info { background: var(--primaria); color: #fff; }
+/* Mensagens com ícone e faixa lateral */
+html[data-daltonico] .mensagem,
+html[data-daltonico] .etiqueta-alerta { border-left: 5px solid currentColor; font-weight: 600; }
 html[data-daltonico] .mensagem-erro::before { content: "✖ "; }
+html[data-daltonico] .mensagem-info::before { content: "ℹ "; }
 html[data-daltonico] .etiqueta-alerta::before { content: "⚠ "; }
-html[data-daltonico] .btn-primario:hover { background: var(--primaria-escura); }
-html[data-daltonico] :focus-visible { outline-width: 4px; }
+/* Foco bem visível: contorno laranja com halo escuro */
+html[data-daltonico] :focus-visible { outline: 4px solid var(--acento); outline-offset: 2px; box-shadow: 0 0 0 7px #000; }
+
+/* Animação de hover: botões e opções crescem levemente */
+.btn, .chip, .acessibilidade button, .barra-usuario button,
+.card-paciente, .item-atendimento, .item-recente, .filtros-avancados summary {
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
+}
+.btn:hover, .chip:hover, .acessibilidade button:hover, .barra-usuario button:hover { transform: scale(1.06); }
+.btn:active, .chip:active, .acessibilidade button:active { transform: scale(.98); }
+.card-paciente:hover, .item-atendimento:hover { transform: scale(1.015); box-shadow: 0 6px 18px rgba(22, 36, 61, .12); }
+.item-recente:hover { transform: scale(1.01); }
+.filtros-avancados summary { display: inline-block; }
+.filtros-avancados summary:hover { transform: scale(1.05); }
 
 /* Lupa: amplia a região sob o mouse */
 .lupa {

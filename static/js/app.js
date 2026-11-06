@@ -24,12 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Acessibilidade: modo daltônico, tamanho da fonte e lupa
+// Acessibilidade: modo daltônico e lupa
 // ---------------------------------------------------------------------------
 (() => {
   const raiz = document.documentElement;
   const salvar = (chave, valor) => { try { localStorage.setItem(chave, valor); } catch (e) {} };
-  const NIVEL_MAX = 3;
 
   document.addEventListener("DOMContentLoaded", () => {
     // 1. Modo daltônico
@@ -43,24 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     if (btnDalt) atualizarDalt();
 
-    // 2. Tamanho da fonte (A− / A+)
-    const btnMenos = document.getElementById("a11y-fonte-menos");
-    const btnMais = document.getElementById("a11y-fonte-mais");
-    const nivelAtual = () => parseInt(raiz.getAttribute("data-fonte") || "0", 10);
-    const aplicarFonte = (nivel) => {
-      nivel = Math.max(0, Math.min(NIVEL_MAX, nivel));
-      if (nivel === 0) raiz.removeAttribute("data-fonte");
-      else raiz.setAttribute("data-fonte", nivel);
-      salvar("a11y-fonte", String(nivel));
-      if (btnMenos) btnMenos.disabled = nivel === 0;
-      if (btnMais) btnMais.disabled = nivel === NIVEL_MAX;
-      lupa.recriar();
-    };
-    btnMenos?.addEventListener("click", () => aplicarFonte(nivelAtual() - 1));
-    btnMais?.addEventListener("click", () => aplicarFonte(nivelAtual() + 1));
-    aplicarFonte(nivelAtual());
-
-    // 3. Lupa: copia a página e mostra ampliada num círculo que segue o mouse
+    // 2. Lupa: copia a página e mostra ampliada num círculo que segue o mouse
     const btnLupa = document.getElementById("a11y-lupa");
     btnLupa?.addEventListener("click", () => lupa.alternar(btnLupa));
     document.addEventListener("keydown", (e) => {

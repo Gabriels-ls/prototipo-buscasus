@@ -8,13 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5">
   <script>
     // Aplica as preferências de acessibilidade antes de desenhar a página (evita "piscar")
     try {
       var h = document.documentElement;
-      var f = localStorage.getItem("a11y-fonte");
-      if (f && f !== "0") h.setAttribute("data-fonte", f);
       if (localStorage.getItem("a11y-daltonico") === "1") h.setAttribute("data-daltonico", "");
     } catch (e) {}
   </script>
@@ -39,14 +37,11 @@
   {% block corpo %}{% endblock %}
 
   <div class="acessibilidade" role="toolbar" aria-label="Acessibilidade">
-    <button type="button" id="a11y-daltonico" aria-pressed="false" title="Modo daltônico: cores seguras para daltonismo">
+    <button type="button" id="a11y-daltonico" aria-pressed="false" aria-label="Alto contraste e modo daltônico" title="Alto contraste e modo daltônico">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-      <span class="rotulo">Daltônico</span>
     </button>
-    <button type="button" id="a11y-fonte-menos" title="Diminuir fonte" aria-label="Diminuir fonte">A−</button>
-    <button type="button" id="a11y-fonte-mais" title="Aumentar fonte" aria-label="Aumentar fonte">A+</button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=3"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=5"></script>
 </body>
 </html>
