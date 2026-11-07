@@ -92,7 +92,7 @@
       <div class="grafico-colunas" role="img"
            aria-label="Atendimentos por mês: {% for s in serie %}{{ s['rotulo'] }} {{ s['total'] }}{{ ', ' if not loop.last }}{% endfor %}">
         {% for s in serie %}
-        <div class="coluna" title="{{ s['rotulo'] }}: {{ s['total'] }} atendimentos">
+        <div class="coluna-grafico" title="{{ s['rotulo'] }}: {{ s['total'] }} atendimentos">
           <span class="valor">{{ s['total'] }}</span>
           <span class="barra-coluna" style="height: {{ (s['total'] / maximo_serie * 100) | round(1) }}%"></span>
           <span class="rotulo-coluna">{{ s['rotulo'] }}</span>
@@ -108,7 +108,7 @@
       {% set maior = por_tipo[0]['total'] %}
       <ul class="barras-horizontais">
         {% for t in por_tipo %}
-        <li>
+        <li class="{{ t['tipo'] | classe_tipo }}">
           <div class="linha-barra"><span>{{ t['tipo'] }}</span><strong>{{ t['total'] }} <small>({{ (t['total'] / resumo['atendimentos'] * 100) | round | int }}%)</small></strong></div>
           <div class="trilho"><span style="width: {{ (t['total'] / maior * 100) | round(1) }}%"></span></div>
         </li>

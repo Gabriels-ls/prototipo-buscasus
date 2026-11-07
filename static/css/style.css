@@ -55,8 +55,8 @@ a:hover { text-decoration: underline; }
 }
 .marca { display: flex; align-items: center; gap: 10px; color: inherit; font-weight: 700; font-size: 1.125rem; }
 .marca:hover { text-decoration: none; }
-.marca-icone { width: 36px; height: 36px; background: #fff; border-radius: 10px; display: grid; place-items: center; }
-.marca-icone img { width: 30px; height: 30px; }
+.marca-icone { width: 42px; height: 42px; display: grid; place-items: center; }
+.marca-icone img { width: 42px; height: 42px; }
 .barra-esquerda { display: flex; align-items: center; gap: 28px; align-self: stretch; }
 .menu-principal { display: flex; gap: 4px; align-self: stretch; }
 .menu-principal a {
@@ -130,7 +130,8 @@ a:hover { text-decoration: underline; }
 /* Login */
 .pagina-login { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 40px 16px; }
 .marca-login { display: flex; align-items: center; gap: 12px; font-size: 1.5rem; font-weight: 700; color: var(--primaria); }
-.marca-login img { width: 48px; height: 48px; }
+/* A cruz da logo é branca: em fundo claro ela vai sobre um quadrado azul-marinho */
+.marca-login img { width: 56px; height: 56px; padding: 6px; background: #1B3768; border-radius: 14px; }
 .cartao-login { width: 100%; max-width: 440px; padding: 40px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 8px 24px rgba(22, 36, 61, .06); }
 .cartao-login h1 { font-size: 1.625rem; }
 .aviso-lgpd { font-size: 0.75rem; color: var(--texto-suave); text-align: center; }
@@ -263,10 +264,10 @@ a:hover { text-decoration: underline; }
 .bloco-largo { grid-column: 1 / -1; }
 /* Colunas (atendimentos por mês) */
 .grafico-colunas { display: flex; align-items: stretch; gap: 8px; height: 220px; }
-.coluna { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; }
-.coluna .valor { font-size: 0.75rem; font-weight: 600; color: var(--texto-suave); }
+.coluna-grafico { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; }
+.coluna-grafico .valor { font-size: 0.75rem; font-weight: 600; color: var(--texto-suave); }
 .barra-coluna { width: 100%; max-width: 44px; min-height: 2px; background: var(--primaria); border-radius: 6px 6px 0 0; transition: background-color .18s ease; }
-.coluna:hover .barra-coluna { background: var(--primaria-escura); }
+.coluna-grafico:hover .barra-coluna { background: var(--primaria-escura); }
 .rotulo-coluna { font-size: 0.6875rem; color: var(--texto-suave); white-space: nowrap; }
 /* Barras horizontais */
 .barras-horizontais { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -324,24 +325,21 @@ html[data-daltonico] .lista-sincronizacao .atrasada { border: 2px solid var(--al
 .cidade-unidade { opacity: .85; }
 
 /* Acessibilidade: barra flutuante */
-.acessibilidade {
-  position: fixed; right: 16px; bottom: 16px; z-index: 1000;
-  display: flex; gap: 6px; padding: 6px;
-  background: var(--superficie); border: 1px solid var(--borda); border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(22, 36, 61, .15);
-}
+/* Aba presa à borda direita da tela (cantos da direita retos, como no ícone) */
+.acessibilidade { position: fixed; right: 0; bottom: 24px; z-index: 1000; display: flex; }
 .acessibilidade button {
-  width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 999px;
-  border: 1px solid transparent; background: var(--fundo); color: var(--texto);
-  font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 6px;
+  width: 60px; height: 54px; padding: 0 0 0 4px; display: grid; place-items: center;
+  border: 0; border-radius: 12px 0 0 12px; background: #1B3768; color: #fff; cursor: pointer;
+  box-shadow: -2px 4px 14px rgba(22, 36, 61, .25); transform-origin: right center;
 }
-.acessibilidade button:hover { border-color: var(--primaria); }
-.acessibilidade button[aria-pressed="true"] { background: var(--primaria); color: #fff; }
-.acessibilidade button:disabled { opacity: .4; cursor: not-allowed; }
-.acessibilidade svg { width: 20px; height: 20px; flex: none; }
+.acessibilidade button:hover { background: #142a50; }
+.acessibilidade button[aria-pressed="true"] { background: var(--acento); color: #000; }
+.acessibilidade svg { width: 34px; height: 24px; }
+.acessibilidade :focus-visible { outline-color: var(--acento); outline-offset: -4px; }
 @media (max-width: 700px) {
-  .acessibilidade { right: 8px; bottom: 8px; }
+  .acessibilidade { bottom: 16px; }
+  .acessibilidade button { width: 52px; height: 46px; }
+  .acessibilidade svg { width: 30px; height: 21px; }
 }
 
 /* Modo daltônico: par azul/laranja (Okabe-Ito), alto contraste e sinais que
@@ -380,14 +378,13 @@ html[data-daltonico] .campo-busca { border-width: 3px; border-color: var(--prima
 html[data-daltonico] .btn-primario:hover { background: var(--primaria-escura); box-shadow: 0 0 0 3px var(--acento); }
 html[data-daltonico] .btn-secundario:hover,
 html[data-daltonico] .chip:hover,
-html[data-daltonico] .item-atendimento:hover,
 html[data-daltonico] .acessibilidade button:hover { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento); }
 html[data-daltonico] .item-recente:hover { background: #FFF4DB; box-shadow: inset 5px 0 0 var(--acento); }
 html[data-daltonico] .chip-ativo,
 html[data-daltonico] .chips input:checked + .chip { background: var(--acento); color: #000; border-color: #000; font-weight: 700; }
 html[data-daltonico] .chip-ativo::before,
 html[data-daltonico] .chips input:checked + .chip::before { content: "✓ "; white-space: pre; }
-html[data-daltonico] .acessibilidade button[aria-pressed="true"] { background: var(--acento); color: #000; border-color: #000; }
+html[data-daltonico] .acessibilidade button[aria-pressed="true"] { background: var(--acento); color: #000; box-shadow: inset 0 0 0 2px #000, -2px 4px 14px rgba(0, 0, 0, .3); }
 /* Blocos de data e avatares com fundo escuro e texto branco */
 html[data-daltonico] .data-bloco,
 html[data-daltonico] .avatar { background: var(--primaria); color: #fff; }
@@ -412,6 +409,41 @@ html[data-daltonico] :focus-visible { outline: 4px solid var(--acento); outline-
 .item-recente:hover { transform: scale(1.01); }
 .filtros-avancados summary { display: inline-block; }
 .filtros-avancados summary:hover { transform: scale(1.05); }
+
+/* Cor por tipo de atendimento, aplicada ao passar o mouse na linha */
+.tipo-consulta   { --cor-tipo: #0E8C9E; --cor-tipo-clara: #E0F5F7; } /* ciano / azul esverdeado */
+.tipo-vacina     { --cor-tipo: #7C3AED; --cor-tipo-clara: #F1EAFE; } /* roxo */
+.tipo-exame      { --cor-tipo: #6B7280; --cor-tipo-clara: #F1F2F4; } /* cinza */
+.tipo-urgencia   { --cor-tipo: #DC2626; --cor-tipo-clara: #FDE8E8; } /* vermelho */
+.tipo-odonto     { --cor-tipo: #16A34A; --cor-tipo-clara: #E3F6E9; } /* verde */
+.tipo-internacao { --cor-tipo: #EA580C; --cor-tipo-clara: #FFEDE2; } /* laranja */
+/* Alto contraste: tons mais escuros para manter a leitura do texto */
+html[data-daltonico] .tipo-consulta   { --cor-tipo: #006D7A; }
+html[data-daltonico] .tipo-vacina     { --cor-tipo: #5B21B6; }
+html[data-daltonico] .tipo-exame      { --cor-tipo: #404651; }
+html[data-daltonico] .tipo-urgencia   { --cor-tipo: #B00000; }
+html[data-daltonico] .tipo-odonto     { --cor-tipo: #0B6B2F; }
+html[data-daltonico] .tipo-internacao { --cor-tipo: #A63C00; }
+
+/* Sempre: faixa lateral na cor do tipo */
+.item-atendimento[class*="tipo-"] { box-shadow: inset 5px 0 0 var(--cor-tipo); }
+/* Ao passar o mouse: destaque completo (contorno, fundo, faixa mais grossa e sombra) */
+.item-atendimento[class*="tipo-"]:hover {
+  border-color: var(--cor-tipo); background: var(--cor-tipo-clara);
+  box-shadow: inset 8px 0 0 var(--cor-tipo), 0 0 0 2px var(--cor-tipo), 0 10px 24px rgba(22, 36, 61, .16);
+}
+.item-atendimento .data-bloco { transition: background-color .18s ease, color .18s ease; }
+.item-atendimento[class*="tipo-"]:hover .data-bloco { background: var(--cor-tipo); color: #fff; }
+.item-atendimento[class*="tipo-"]:hover h3,
+.item-atendimento[class*="tipo-"]:hover .rodape-item span:last-child { color: var(--cor-tipo); }
+
+
+/* Painel: barra do tipo ganha a cor ao passar o mouse */
+.barras-horizontais li { padding: 4px 8px; margin: -4px -8px; border-radius: var(--raio); transition: background-color .18s ease; }
+.barras-horizontais .trilho span { transition: background-color .18s ease; }
+.barras-horizontais li[class*="tipo-"]:hover { background: var(--cor-tipo-clara); }
+.barras-horizontais li[class*="tipo-"]:hover .trilho span { background: var(--cor-tipo); }
+.barras-horizontais li[class*="tipo-"]:hover .linha-barra span { color: var(--cor-tipo); font-weight: 600; }
 
 /* Lupa: amplia a região sob o mouse */
 .lupa {

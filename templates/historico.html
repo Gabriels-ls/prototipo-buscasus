@@ -80,7 +80,7 @@
       {% for ano, itens in grupos %}
         <h2 class="ano">{{ ano }}</h2>
         {% for a in itens %}
-        <a class="cartao item-atendimento" href="{{ url_for('atendimento', atendimento_id=a['id']) }}">
+        <a class="cartao item-atendimento {{ a['tipo'] | classe_tipo }}" href="{{ url_for('atendimento', atendimento_id=a['id']) }}">
           <div class="data-bloco">
             <span class="dia">{{ a['data_hora'][8:10] }}</span>
             <span class="mes">{{ a['data_hora'] | mes_ano }}</span>

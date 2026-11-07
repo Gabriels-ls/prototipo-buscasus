@@ -253,6 +253,14 @@ CATEGORIAS = {
 }
 LIMITE_INICIAL = 10
 
+# Classe CSS de cada tipo de atendimento (define a cor ao passar o mouse)
+CLASSE_TIPO = {
+    "Consulta médica": "tipo-consulta", "Consulta de enfermagem": "tipo-consulta",
+    "Vacinação": "tipo-vacina", "Exame laboratorial": "tipo-exame", "Urgência": "tipo-urgencia",
+    "Consulta odontológica": "tipo-odonto", "Internação": "tipo-internacao",
+}
+app.jinja_env.filters["classe_tipo"] = lambda tipo: CLASSE_TIPO.get(tipo, "")
+
 
 def obter_paciente(paciente_id):
     paciente = db.get_db().execute(

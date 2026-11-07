@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Busca SUS{% endblock %}</title>
-  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}?v=2" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=6">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=11">
   <script>
     // Aplica as preferências de acessibilidade antes de desenhar a página (evita "piscar")
     try {
@@ -22,7 +22,7 @@
   <header class="barra">
     <div class="barra-esquerda">
       <a class="marca" href="{{ url_for('busca') }}" aria-label="Busca SUS: página inicial" title="Busca SUS">
-        <span class="marca-icone"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></span>
+        <span class="marca-icone"><img src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt=""></span>
       </a>
       {% set no_painel = request.endpoint == 'painel' %}
       <nav class="menu-principal" aria-label="Menu principal">
@@ -44,10 +44,10 @@
 
   <div class="acessibilidade" role="toolbar" aria-label="Acessibilidade">
     <button type="button" id="a11y-daltonico" aria-pressed="false" aria-label="Alto contraste e modo daltônico" title="Alto contraste e modo daltônico">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg viewBox="19.5 25.5 63 42.5" fill="currentColor" aria-hidden="true"><path transform="matrix(1,0,0,-1,51.4473,38.9799)" d="M0 0C-3.603 0-6.534-2.931-6.534-6.534-6.534-10.136-3.603-13.067 0-13.067 3.603-13.067 6.534-10.136 6.534-6.534 6.534-2.931 3.603 0 0 0M0-17.067C-5.808-17.067-10.534-12.342-10.534-6.534-10.534-.726-5.808 4 0 4 5.808 4 10.534-.726 10.534-6.534 10.534-12.342 5.808-17.067 0-17.067"/><path transform="matrix(1,0,0,-1,24.6304,46.6875)" d="M0 0C2.822-3.594 14.967-16.454 27.996-16.454 40.946-16.454 51.143-3.741 53.451-.103 50.976 3.404 39.777 16.382 26.689 16.382 13.726 16.382 2.615 3.65 0 0M27.996-20.454C19.036-20.454 10.839-15.346 5.541-11.061 2.083-8.265-4.365-2.019-4.365-.05-4.365 2.176 9.9 20.382 26.689 20.382 43.478 20.382 57.743 2.176 57.743-.05 57.743-2.341 44.493-20.454 27.996-20.454"/></svg>
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}?v=6"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=11"></script>
 </body>
 </html>
